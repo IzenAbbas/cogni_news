@@ -35,6 +35,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   http: ^1.6.0
+  google_fonts: ^8.0.2
 
 dev_dependencies:
   flutter_test:
@@ -74,7 +75,17 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
-  # fonts:
+  fonts:
+    - family: Georgia
+      fonts:
+        - asset: assets/fonts/georgia.ttf
+        - asset: assets/fonts/georgiab.ttf
+          weight: 700
+        - asset: assets/fonts/georgiai.ttf
+          style: italic
+        - asset: assets/fonts/georgiaz.ttf
+          weight: 700
+          style: italic
   #   - family: Schyler
   #     fonts:
   #       - asset: fonts/Schyler-Regular.ttf
