@@ -2,7 +2,6 @@ import 'package:cogni_news/colors.dart';
 import 'package:cogni_news/news.dart';
 import 'package:cogni_news/profile.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,8 +14,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
+      title: 'CogniNews',
       home: Navigation(),
     );
   }
@@ -36,6 +34,7 @@ class _NavigationState extends State<Navigation> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.white,
         leading: Icon(Icons.menu),
         leadingWidth: 32, // Reduce the width for less left space
         titleSpacing: 4, // Remove extra space between leading and title
@@ -61,8 +60,8 @@ class _NavigationState extends State<Navigation> {
           });
         },
         items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'News'),
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Profile'),
+          BottomNavigationBarItem(icon: Icon(Icons.newspaper), label: 'News'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
     );
