@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "163840053579",
+    "project_id": "cogninews-3f6c1",
+    "storage_bucket": "cogninews-3f6c1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:163840053579:android:f840353df82109349558ce",
+        "android_client_info": {
+          "package_name": "com.example.cogni_news"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB59Q4wv807E_Cq-z6K2IapgFqTgPnb2Q4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

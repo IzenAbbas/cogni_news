@@ -3,8 +3,15 @@ import 'package:cogni_news/news.dart';
 import 'package:cogni_news/profile.dart';
 import 'package:cogni_news/saved_news.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-void main() {
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 
