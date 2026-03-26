@@ -6,12 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
@@ -38,16 +35,27 @@ class _NavigationState extends State<Navigation> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: scaffoldBackground,
       appBar: AppBar(
         backgroundColor: Colors.white,
         centerTitle: true,
-        title: Text(
-          'CogniNews',
-          style: TextStyle(
-            color: primary,
-            fontFamily: 'Georgia',
-            fontStyle: FontStyle.italic,
-            fontWeight: FontWeight.bold,
+        title: Container(
+          decoration: BoxDecoration(
+            border: BoxBorder.all(width: 1, color: primary),
+            borderRadius: BorderRadius.circular(12.0),
+            color: const Color.fromARGB(67, 211, 70, 27),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
+            child: Text(
+              'CogniNews',
+              style: TextStyle(
+                color: primary,
+                fontFamily: 'Georgia',
+                fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ),
       ),
@@ -65,7 +73,9 @@ class _NavigationState extends State<Navigation> {
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.newspaper), label: 'News'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.bookmark_outline),
+            icon: Icon(
+              _selectedIndex == 1 ? Icons.bookmark : Icons.bookmark_outline,
+            ),
             label: 'Saved News',
           ),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
