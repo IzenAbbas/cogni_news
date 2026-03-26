@@ -1,9 +1,10 @@
+import 'package:cogni_news/auth/google_auth.dart';
 import 'package:cogni_news/colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class SignUp extends StatefulWidget {
-  final VoidCallback onToggle; // switch to sign-in page
+  final VoidCallback onToggle;
 
   const SignUp({super.key, required this.onToggle});
 
@@ -20,6 +21,7 @@ class _SignUpState extends State<SignUp> {
   bool _obscurePass = true;
   bool _obscureConfirm = true;
   bool _loading = false;
+  bool _googleLoading = false;
   String? _error;
 
   @override
@@ -45,11 +47,11 @@ class _SignUpState extends State<SignUp> {
         password: _passCtrl.text,
       );
       await cred.user?.updateDisplayName(_nameCtrl.text.trim());
-      // Auth state listener in Profile will auto-update the UI
-    } on FirebaseAuthException catch (e) {
-      setState(() => _error = _mapError(e.code));
-    } catch (_) {
-      setState(() => _error = 'Something went wrong. Please try again.');
+      await cred.user?.reload();
+    } on FirebaseException catch (e) {
+      setState(() => _error = '${_mapError(e.code)} (${e.code}: ${e.message})');
+    } catch (e) {
+      setState(() => _error = e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -64,7 +66,7 @@ class _SignUpState extends State<SignUp> {
       case 'invalid-email':
         return 'Please enter a valid email address.';
       default:
-        return 'Sign-up failed. Please try again.';
+        return 'Error';
     }
   }
 
@@ -78,7 +80,6 @@ class _SignUpState extends State<SignUp> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 20),
-            // Header
             Icon(Icons.person_add_alt_1, size: 64, color: primary),
             const SizedBox(height: 12),
             Text(
@@ -98,7 +99,6 @@ class _SignUpState extends State<SignUp> {
             ),
             const SizedBox(height: 28),
 
-            // Error banner
             if (_error != null)
               Container(
                 padding: const EdgeInsets.all(12),
@@ -110,7 +110,11 @@ class _SignUpState extends State<SignUp> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
+                    Icon(
+                      Icons.error_outline,
+                      color: Colors.red.shade700,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -125,7 +129,6 @@ class _SignUpState extends State<SignUp> {
                 ),
               ),
 
-            // Name
             TextFormField(
               controller: _nameCtrl,
               textCapitalization: TextCapitalization.words,
@@ -135,7 +138,6 @@ class _SignUpState extends State<SignUp> {
             ),
             const SizedBox(height: 14),
 
-            // Email
             TextFormField(
               controller: _emailCtrl,
               keyboardType: TextInputType.emailAddress,
@@ -150,19 +152,20 @@ class _SignUpState extends State<SignUp> {
             ),
             const SizedBox(height: 14),
 
-            // Password
             TextFormField(
               controller: _passCtrl,
               obscureText: _obscurePass,
-              decoration: _inputDecoration('Password', Icons.lock_outline).copyWith(
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscurePass ? Icons.visibility_off : Icons.visibility,
-                    color: secondaryText,
+              decoration: _inputDecoration('Password', Icons.lock_outline)
+                  .copyWith(
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePass ? Icons.visibility_off : Icons.visibility,
+                        color: secondaryText,
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscurePass = !_obscurePass),
+                    ),
                   ),
-                  onPressed: () => setState(() => _obscurePass = !_obscurePass),
-                ),
-              ),
               validator: (v) {
                 if (v == null || v.isEmpty) return 'Password is required';
                 if (v.length < 6) return 'At least 6 characters';
@@ -171,21 +174,25 @@ class _SignUpState extends State<SignUp> {
             ),
             const SizedBox(height: 14),
 
-            // Confirm password
             TextFormField(
               controller: _confirmCtrl,
               obscureText: _obscureConfirm,
               decoration:
-                  _inputDecoration('Confirm Password', Icons.lock_outline).copyWith(
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscureConfirm ? Icons.visibility_off : Icons.visibility,
-                    color: secondaryText,
+                  _inputDecoration(
+                    'Confirm Password',
+                    Icons.lock_outline,
+                  ).copyWith(
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirm
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: secondaryText,
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscureConfirm = !_obscureConfirm),
+                    ),
                   ),
-                  onPressed: () =>
-                      setState(() => _obscureConfirm = !_obscureConfirm),
-                ),
-              ),
               validator: (v) {
                 if (v != _passCtrl.text) return 'Passwords do not match';
                 return null;
@@ -193,7 +200,6 @@ class _SignUpState extends State<SignUp> {
             ),
             const SizedBox(height: 24),
 
-            // Submit button
             SizedBox(
               height: 50,
               child: ElevatedButton(
@@ -221,9 +227,91 @@ class _SignUpState extends State<SignUp> {
                     : const Text('Sign Up'),
               ),
             ),
+            const SizedBox(height: 20),
+
+            Row(
+              children: [
+                Expanded(child: Divider(color: Colors.grey.shade300)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  child: Text(
+                    'OR',
+                    style: TextStyle(
+                      color: secondaryText,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                Expanded(child: Divider(color: Colors.grey.shade300)),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            GestureDetector(
+              onTap: _googleLoading
+                  ? null
+                  : () async {
+                      setState(() {
+                        _googleLoading = true;
+                        _error = null;
+                      });
+                      try {
+                        await signInWithGoogle();
+                      } on FirebaseException catch (e) {
+                        setState(
+                          () => _error =
+                              '${_mapError(e.code)} (${e.code}: ${e.message})',
+                        );
+                      } catch (e) {
+                        setState(() => _error = e.toString());
+                      } finally {
+                        if (mounted) {
+                          setState(() => _googleLoading = false);
+                        }
+                      }
+                    },
+              child: _googleLoading
+                  ? const SizedBox(
+                      height: 50,
+                      child: Center(
+                        child: SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    )
+                  : Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.black87),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            'assets/images/google_signin.png',
+                            height: 24,
+                            width: 24,
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Continue with Google',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+            ),
             const SizedBox(height: 18),
 
-            // Toggle to sign-in
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

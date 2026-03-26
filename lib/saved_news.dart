@@ -19,7 +19,6 @@ class _SavedNewsState extends State<SavedNews> {
   void initState() {
     super.initState();
     _user = FirebaseAuth.instance.currentUser;
-    // Re-check auth whenever the widget is shown
     FirebaseAuth.instance.authStateChanges().listen((user) {
       if (mounted) setState(() => _user = user);
     });
@@ -139,7 +138,6 @@ class _SavedNewsState extends State<SavedNews> {
 
   @override
   Widget build(BuildContext context) {
-    // Not signed in
     if (_user == null) {
       return Center(
         child: Padding(
@@ -169,7 +167,6 @@ class _SavedNewsState extends State<SavedNews> {
       );
     }
 
-    // Signed in — stream saved articles from Firestore
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: FirebaseFirestore.instance
           .collection('users')

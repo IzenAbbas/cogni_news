@@ -15,7 +15,6 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(title: 'CogniNews', home: Navigation());
@@ -43,7 +42,7 @@ class _NavigationState extends State<Navigation> {
           decoration: BoxDecoration(
             border: BoxBorder.all(width: 1, color: primary),
             borderRadius: BorderRadius.circular(12.0),
-            color: const Color.fromARGB(67, 211, 70, 27),
+            color: scaffoldBackground,
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),

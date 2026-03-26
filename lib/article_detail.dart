@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// Strips HTML tags and removes the NewsAPI truncation marker [+N chars].
 String _cleanContent(String raw) {
   String cleaned = raw.replaceAll(RegExp(r'<[^>]*>'), ' ');
   cleaned = cleaned.replaceAll(RegExp(r'\[\+\d+ chars\]'), '');
@@ -58,7 +57,6 @@ class _ArticleDetailState extends State<ArticleDetail> {
   Future<void> _toggleBookmark() async {
     final user = FirebaseAuth.instance.currentUser;
 
-    // Not signed in — show snackbar
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -143,7 +141,7 @@ class _ArticleDetailState extends State<ArticleDetail> {
           decoration: BoxDecoration(
             border: BoxBorder.all(width: 1, color: primary),
             borderRadius: BorderRadius.circular(12.0),
-            color: const Color.fromARGB(67, 211, 70, 27),
+            color: scaffoldBackground,
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
@@ -187,7 +185,6 @@ class _ArticleDetailState extends State<ArticleDetail> {
       ),
       body: ListView(
         children: [
-          // Article image
           if (widget.article.urlToImage != null &&
               widget.article.urlToImage!.isNotEmpty)
             Image.network(
@@ -217,7 +214,6 @@ class _ArticleDetailState extends State<ArticleDetail> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Source badge & date
                 Row(
                   children: [
                     Container(
@@ -248,7 +244,6 @@ class _ArticleDetailState extends State<ArticleDetail> {
                 ),
                 const SizedBox(height: 16),
 
-                // Title
                 Text(
                   widget.article.title,
                   style: TextStyle(
@@ -260,7 +255,6 @@ class _ArticleDetailState extends State<ArticleDetail> {
                 ),
                 const SizedBox(height: 12),
 
-                // Author
                 if (widget.article.author != null &&
                     widget.article.author!.isNotEmpty)
                   Padding(
@@ -291,7 +285,6 @@ class _ArticleDetailState extends State<ArticleDetail> {
                 Divider(color: Colors.grey[300]),
                 const SizedBox(height: 12),
 
-                // Description
                 if (widget.article.description != null &&
                     widget.article.description!.isNotEmpty)
                   Padding(
@@ -307,7 +300,6 @@ class _ArticleDetailState extends State<ArticleDetail> {
                     ),
                   ),
 
-                // Content
                 if (widget.article.content != null &&
                     widget.article.content!.isNotEmpty)
                   Text(
@@ -321,7 +313,6 @@ class _ArticleDetailState extends State<ArticleDetail> {
 
                 const SizedBox(height: 24),
 
-                // Read full article button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(

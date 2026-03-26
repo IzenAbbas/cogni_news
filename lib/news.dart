@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import "dart:convert";
 import "package:http/http.dart" as http;
 
-//Class that represents the api call from newsapi.org
 class NewsResponse {
   final String status;
   final int totalResults;
@@ -248,7 +247,6 @@ class _NewsState extends State<News> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Article image
             if (article.urlToImage != null && article.urlToImage!.isNotEmpty)
               AspectRatio(
                 aspectRatio: 16 / 9,
@@ -273,7 +271,6 @@ class _NewsState extends State<News> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Source & time row
                   Row(
                     children: [
                       Container(
@@ -303,7 +300,6 @@ class _NewsState extends State<News> {
                   ),
                   const SizedBox(height: 8),
 
-                  // Title
                   Text(
                     article.title,
                     maxLines: 3,
@@ -316,7 +312,6 @@ class _NewsState extends State<News> {
                     ),
                   ),
 
-                  // Description
                   if (article.description != null &&
                       article.description!.isNotEmpty) ...[
                     const SizedBox(height: 6),
