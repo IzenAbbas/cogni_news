@@ -1,23 +1,116 @@
 import 'package:cogni_news/colors.dart';
 import 'package:cogni_news/news.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Strips HTML tags and removes the NewsAPI truncation marker [+N chars].
 String _cleanContent(String raw) {
-  // Remove HTML tags
   String cleaned = raw.replaceAll(RegExp(r'<[^>]*>'), ' ');
-  // Remove the [+NNN chars] truncation marker
   cleaned = cleaned.replaceAll(RegExp(r'\[\+\d+ chars\]'), '');
-  // Collapse multiple whitespace / newlines into a single space
   cleaned = cleaned.replaceAll(RegExp(r'\s+'), ' ').trim();
   return cleaned;
 }
 
-class ArticleDetail extends StatelessWidget {
+class ArticleDetail extends StatefulWidget {
   final Article article;
 
   const ArticleDetail({super.key, required this.article});
+
+  @override
+  State<ArticleDetail> createState() => _ArticleDetailState();
+}
+
+class _ArticleDetailState extends State<ArticleDetail> {
+  bool _isSaved = false;
+  bool _isLoading = true;
+
+  String get _docId =>
+      Uri.encodeComponent(widget.article.url).replaceAll('%', '_');
+
+  @override
+  void initState() {
+    super.initState();
+    _checkIfSaved();
+  }
+
+  Future<void> _checkIfSaved() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('saved_articles')
+        .doc(_docId)
+        .get();
+    if (mounted) {
+      setState(() {
+        _isSaved = doc.exists;
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _toggleBookmark() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    // Not signed in — show snackbar
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please sign in first to save articles.'),
+          backgroundColor: primary,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    final ref = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('saved_articles')
+        .doc(_docId);
+
+    if (_isSaved) {
+      await ref.delete();
+      if (mounted) {
+        setState(() => _isSaved = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Article removed from saved.'),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    } else {
+      await ref.set(widget.article.toJson());
+      if (mounted) {
+        setState(() => _isSaved = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Article saved!'),
+            backgroundColor: primary,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    }
+  }
 
   String _formatDate(DateTime? dateTime) {
     if (dateTime == null) return '';
@@ -35,13 +128,14 @@ class ArticleDetail extends StatelessWidget {
       'Nov',
       'Dec',
     ];
-    return '${months[dateTime.month - 1]} ${dateTime.day}, ${dateTime.year} at ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    return '${months[dateTime.month - 1]} ${dateTime.day}, ${dateTime.year} '
+        'at ${dateTime.hour.toString().padLeft(2, '0')}:'
+        '${dateTime.minute.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: scaffoldBackground,
       appBar: AppBar(
         backgroundColor: Colors.white,
         centerTitle: true,
@@ -64,13 +158,40 @@ class ArticleDetail extends StatelessWidget {
             ),
           ),
         ),
+        actions: [
+          _isLoading
+              ? const Padding(
+                  padding: EdgeInsets.all(14.0),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              : IconButton(
+                  tooltip: _isSaved ? 'Remove bookmark' : 'Bookmark article',
+                  icon: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    transitionBuilder: (child, animation) =>
+                        ScaleTransition(scale: animation, child: child),
+                    child: Icon(
+                      _isSaved ? Icons.bookmark : Icons.bookmark_border,
+                      key: ValueKey(_isSaved),
+                      color: primary,
+                      size: 26,
+                    ),
+                  ),
+                  onPressed: _toggleBookmark,
+                ),
+        ],
       ),
       body: ListView(
         children: [
           // Article image
-          if (article.urlToImage != null && article.urlToImage!.isNotEmpty)
+          if (widget.article.urlToImage != null &&
+              widget.article.urlToImage!.isNotEmpty)
             Image.network(
-              article.urlToImage!,
+              widget.article.urlToImage!,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => Container(
                 color: Colors.grey[300],
@@ -109,7 +230,7 @@ class ArticleDetail extends StatelessWidget {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        article.source.name,
+                        widget.article.source.name,
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -118,9 +239,9 @@ class ArticleDetail extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    if (article.publishedAt != null)
+                    if (widget.article.publishedAt != null)
                       Text(
-                        _formatDate(article.publishedAt),
+                        _formatDate(widget.article.publishedAt),
                         style: TextStyle(fontSize: 13, color: secondaryText),
                       ),
                   ],
@@ -129,7 +250,7 @@ class ArticleDetail extends StatelessWidget {
 
                 // Title
                 Text(
-                  article.title,
+                  widget.article.title,
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -140,7 +261,8 @@ class ArticleDetail extends StatelessWidget {
                 const SizedBox(height: 12),
 
                 // Author
-                if (article.author != null && article.author!.isNotEmpty)
+                if (widget.article.author != null &&
+                    widget.article.author!.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),
                     child: Row(
@@ -153,7 +275,7 @@ class ArticleDetail extends StatelessWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            article.author!,
+                            widget.article.author!,
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
@@ -170,12 +292,12 @@ class ArticleDetail extends StatelessWidget {
                 const SizedBox(height: 12),
 
                 // Description
-                if (article.description != null &&
-                    article.description!.isNotEmpty)
+                if (widget.article.description != null &&
+                    widget.article.description!.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),
                     child: Text(
-                      article.description!,
+                      widget.article.description!,
                       style: TextStyle(
                         fontSize: 16,
                         color: primaryText,
@@ -186,9 +308,10 @@ class ArticleDetail extends StatelessWidget {
                   ),
 
                 // Content
-                if (article.content != null && article.content!.isNotEmpty)
+                if (widget.article.content != null &&
+                    widget.article.content!.isNotEmpty)
                   Text(
-                    _cleanContent(article.content!),
+                    _cleanContent(widget.article.content!),
                     style: TextStyle(
                       fontSize: 15,
                       color: primaryText,
@@ -203,7 +326,7 @@ class ArticleDetail extends StatelessWidget {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () async {
-                      final uri = Uri.parse(article.url);
+                      final uri = Uri.parse(widget.article.url);
                       if (await canLaunchUrl(uri)) {
                         await launchUrl(
                           uri,
