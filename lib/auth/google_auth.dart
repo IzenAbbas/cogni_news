@@ -4,28 +4,32 @@ import 'package:flutter/foundation.dart'; // For kIsWeb
 
 Future<UserCredential?> signInWithGoogle() async {
   try {
-    // Initialize GoogleSignIn with the Web Client ID if on the web
-    final GoogleSignIn googleSignIn = GoogleSignIn(
-      clientId: kIsWeb
-          ? '275567862972-ol86fje7026j3akfbjvh05n6rie3qhiv.apps.googleusercontent.com'
-          : null,
-    );
+    if (kIsWeb) {
+      // Use Firebase's built-in Google Auth provider logic for Flutter Web.
+      GoogleAuthProvider authProvider = GoogleAuthProvider();
+      authProvider.addScope('email');
 
-    final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      return await FirebaseAuth.instance.signInWithPopup(authProvider);
+    } else {
+      // Initialize GoogleSignIn natively for Android/iOS
+      final GoogleSignIn googleSignIn = GoogleSignIn();
 
-    if (googleUser == null) {
-      return null; // The user canceled the sign-in
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
+      if (googleUser == null) {
+        return null; // The user canceled the sign-in
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      return await FirebaseAuth.instance.signInWithCredential(credential);
     }
-
-    final GoogleSignInAuthentication googleAuth =
-        await googleUser.authentication;
-
-    final AuthCredential credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-
-    return await FirebaseAuth.instance.signInWithCredential(credential);
   } catch (e) {
     print("Error during Google Sign-In: $e");
     return null;
