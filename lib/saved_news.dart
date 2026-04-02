@@ -226,10 +226,53 @@ class _SavedNewsState extends State<SavedNews> {
             .map((doc) => Article.fromJson(doc.data()))
             .toList();
 
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          itemCount: articles.length,
-          itemBuilder: (context, index) => _buildArticleCard(articles[index]),
+        return OrientationBuilder(
+          builder: (context, orientation) {
+            if (orientation == Orientation.portrait) {
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                itemCount: articles.length,
+                itemBuilder: (context, index) =>
+                    _buildArticleCard(articles[index]),
+              );
+            } else {
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                itemCount: (articles.length / 3).ceil(),
+                itemBuilder: (context, index) {
+                  final start = index * 3;
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: start < articles.length
+                            ? _buildArticleCard(articles[start])
+                            : const SizedBox.shrink(),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: start + 1 < articles.length
+                            ? _buildArticleCard(articles[start + 1])
+                            : const SizedBox.shrink(),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: start + 2 < articles.length
+                            ? _buildArticleCard(articles[start + 2])
+                            : const SizedBox.shrink(),
+                      ),
+                    ],
+                  );
+                },
+              );
+            }
+          },
         );
       },
     );
