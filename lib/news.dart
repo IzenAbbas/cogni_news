@@ -123,17 +123,40 @@ class _NewsState extends State<News> {
   }
 
   Future<void> fetchNews() async {
-    final url = Uri.parse(
+    final newsApiUrl = Uri.parse(
       'https://newsapi.org/v2/everything?q=apple&from=2026-03-23&to=2026-03-23&sortBy=popularity&apiKey=e274aa8899864d818faae39afb7866f2',
     );
+    final firebaseDbUrl = Uri.parse(
+      'https://cogninews-3f6c1-default-rtdb.firebaseio.com/articles.json',
+    );
+
     try {
-      final response = await http.get(url);
+      final response = await http.get(newsApiUrl);
       if (response.statusCode == 200) {
+        // Save it into Firebase Realtime Database
+        await http.put(firebaseDbUrl, body: response.body);
+
         final data = json.decode(response.body);
         setState(() {
           _newsData = NewsResponse.fromJson(data);
           _isLoading = false;
         });
+      } else if (response.statusCode == 426) {
+        // Returning 426 means it is running on deployed website, fetch from Firebase
+        final firebaseResponse = await http.get(firebaseDbUrl);
+        if (firebaseResponse.statusCode == 200) {
+          final data = json.decode(firebaseResponse.body);
+          setState(() {
+            _newsData = NewsResponse.fromJson(data);
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _error =
+                'Failed to load news from Firebase (status ${firebaseResponse.statusCode})';
+            _isLoading = false;
+          });
+        }
       } else {
         setState(() {
           _error = 'Failed to load news (status ${response.statusCode})';
@@ -141,10 +164,27 @@ class _NewsState extends State<News> {
         });
       }
     } catch (e) {
-      setState(() {
-        _error = 'Something went wrong. Please try again.';
-        _isLoading = false;
-      });
+      // In case of any CORS or other errors that might mimic the deployed behavior
+      try {
+        final firebaseResponse = await http.get(firebaseDbUrl);
+        if (firebaseResponse.statusCode == 200) {
+          final data = json.decode(firebaseResponse.body);
+          setState(() {
+            _newsData = NewsResponse.fromJson(data);
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _error = 'Something went wrong. Please try again.';
+            _isLoading = false;
+          });
+        }
+      } catch (err) {
+        setState(() {
+          _error = 'Something went wrong. Please try again.';
+          _isLoading = false;
+        });
+      }
     }
   }
 
